@@ -5,6 +5,8 @@ from .models import db, User, Account, Transaction, Admin
 from datetime import datetime
 from . import create_app
 import os
+import shlex
+import subprocess
 
 main_bp = Blueprint('main', __name__)
 
@@ -21,8 +23,13 @@ def rce():
     output = ""
     if request.method == 'POST':
         command = request.form.get('command')
-        # Vulnerable to RCE
-        output = os.popen(command).read()
+        // TODO: Update this list to include allowable commands
+        allowed_commands = ['ls', 'whoami']  # Define allowed commands
+        command_parts = shlex.split(command)
+        if command_parts[0] not in allowed_commands:
+            flash('Invalid command', 'danger')
+        else:
+            output = subprocess.run(command_parts, capture_output=True, text=True, shell=False).stdout
     return render_template('rce.html', output=output)
 
 @main_bp.route('/rce_2', methods=['GET', 'POST'])
@@ -34,8 +41,13 @@ def rce_2():
     output = ""
     if request.method == 'POST':
         command = request.form.get('command')
-        # Vulnerable to RCE
-        output = os.popen(command).read()
+        // TODO: Update this list to include allowable commands
+        allowed_commands = ['ls', 'whoami']  # Define allowed commands
+        command_parts = shlex.split(command)
+        if command_parts[0] not in allowed_commands:
+            flash('Invalid command', 'danger')
+        else:
+            output = subprocess.run(command_parts, capture_output=True, text=True, shell=False).stdout
     return render_template('rce.html', output=output)
 
 @main_bp.route('/register', methods=['GET', 'POST'])
@@ -121,7 +133,6 @@ def admin_login():
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
-        # Vulnerable to SQL injection
         query = text(f"SELECT * FROM admin WHERE username='{username}' AND password='{password}'")
         result = db.session.execute(query).fetchone()
         if result:
